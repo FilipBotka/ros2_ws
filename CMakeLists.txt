@@ -17,9 +17,28 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(matplotlib_cpp REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+
+
+add_executable(pub_cmd src/pub.cpp)
+add_executable(sub_odom src/sub.cpp)
+add_executable(plot_scan src/subLidar.cpp)
+ament_target_dependencies(pub_cmd rclcpp geometry_msgs)
+ament_target_dependencies(sub_odom rclcpp nav_msgs)
+ament_target_dependencies(plot_scan rclcpp sensor_msgs)
+target_link_libraries(plot_scan matplotlib_cpp::matplotlib_cpp)
+
+install(TARGETS
+  pub_cmd 
+  sub_odom
+  plot_scan
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
