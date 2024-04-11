@@ -25,19 +25,30 @@ find_package(sensor_msgs REQUIRED)
 find_package(matplotlib_cpp REQUIRED)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/ControlCmd.msg
+)
+
 
 add_executable(pub_cmd src/pub.cpp)
 add_executable(sub_odom src/sub.cpp)
 add_executable(plot_scan src/subLidar.cpp)
+add_executable(master src/master.cpp)
+add_executable(prcs src/process.cpp)
 ament_target_dependencies(pub_cmd rclcpp geometry_msgs)
 ament_target_dependencies(sub_odom rclcpp nav_msgs)
 ament_target_dependencies(plot_scan rclcpp sensor_msgs)
+ament_target_dependencies(master rclcpp std_msgs)
+ament_target_dependencies(prcs rclcpp geometry_msgs)
 target_link_libraries(plot_scan matplotlib_cpp::matplotlib_cpp)
 
 install(TARGETS
   pub_cmd 
   sub_odom
   plot_scan
+  master
+  prcs
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

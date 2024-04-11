@@ -1,34 +1,33 @@
-#include "../include/uds_kobuki/pub.h"
+#include "../include/pub.h"
 
 Cmd::Cmd()
     : Node("control_cmd")
 {
-    publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+    publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_prcs", 10);
     RCLCPP_INFO(this->get_logger(), "Keyboard publisher has been started.");
 }
 
 void Cmd::publishCommand(char key)
 {
-    auto message = geometry_msgs::msg::Twist();
 
     switch (key) {
         case 'A': // Sipka hore
-            message.linear.x = 0.5;
+            message_.linear.x += 0.1;
             break;
         case 'B': // Sipka dole
-            message.linear.x = -0.5;
+            message_.linear.x += -0.1;
             break;
         case 'C': // Sipka vpravo
-            message.angular.z = -1.0;
+            message_.angular.z += -0.1;
             break;
         case 'D': // Sipka vlavo
-            message.angular.z = 1.0;
+            message_.angular.z += 0.1;
             break;
         default:
             RCLCPP_INFO(this->get_logger(), "Invalid key.");
     }
 
-    publisher_->publish(message);
+    publisher_->publish(message_);
 }
 
 char Cmd::getch()

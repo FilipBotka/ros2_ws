@@ -1,4 +1,4 @@
-#include "../include/uds_kobuki/subLidar.h"
+#include "../include/subLidar.h"
 
 LidarData::LidarData()
     : Node("Lidar_subscribe")

@@ -18,6 +18,8 @@ class Cmd : public rclcpp::Node
         void publishCommand(char key);
         char getch();
 
+        geometry_msgs::msg::Twist message_;
+
     private:
         rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
