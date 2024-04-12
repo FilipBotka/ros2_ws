@@ -11,7 +11,7 @@ Master::Master()
 void Master::getInput()
 {
     
-    int input;
+    int16_t input;
     std::string line;
     while (rclcpp::ok())
     {
@@ -27,8 +27,20 @@ void Master::getInput()
         {
             RCLCPP_ERROR(this->get_logger(), "Invalid input. Please enter a valid integer.");
         }
+
+        RCLCPP_INFO(this->get_logger(), "Integer to publisher: %d", input);
+
+        std_msgs::msg::Int16 msg;
+        msg.data = input;
+
+        publisher_->publish(msg);
     }
     
+}
+
+rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr Master::getPublisher() const
+{
+    return publisher_;
 }
 
 
@@ -36,7 +48,16 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<Master>();
-    node->getInput();      
+    auto publisher = node->getPublisher();
+
+    while (rclcpp::ok())
+    {
+        node->getInput();      
+        
+    }
+    
+
+    
 
     rclcpp::shutdown();
     return 0;

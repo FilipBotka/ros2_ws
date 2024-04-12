@@ -14,6 +14,7 @@ class Master : public rclcpp::Node
         Master();
 
         void getInput();
+        rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr getPublisher() const;
 
 
     private:

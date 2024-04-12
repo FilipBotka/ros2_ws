@@ -22,6 +22,10 @@ void Cmd::publishCommand(char key)
             break;
         case 'D': // Sipka vlavo
             message_.angular.z += 0.1;
+            break; 
+        case '\n': // Enter key or 'X' to stop
+            message_.linear.x = 0;
+            message_.angular.z = 0;
             break;
         default:
             RCLCPP_INFO(this->get_logger(), "Invalid key.");
@@ -65,8 +69,9 @@ int main(int argc, char * argv[]) {
         if (c == '\033') { // if the first value is esc
             node->getch();      // skip the [
             c = node->getch();  // get the actual value
-            node->publishCommand(c);
+            //node->publishCommand(c);
         }
+        node->publishCommand(c);
     }
 
     rclcpp::shutdown();
