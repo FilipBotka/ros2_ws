@@ -36,12 +36,15 @@ add_executable(sub_odom src/sub.cpp)
 add_executable(plot_scan src/subLidar.cpp)
 add_executable(master src/master.cpp)
 add_executable(prcs src/process.cpp)
+add_executable(automatic src/automatic.cpp)
 ament_target_dependencies(pub_cmd rclcpp geometry_msgs)
 ament_target_dependencies(sub_odom rclcpp nav_msgs)
 ament_target_dependencies(plot_scan rclcpp sensor_msgs)
 ament_target_dependencies(master rclcpp std_msgs)
 ament_target_dependencies(prcs rclcpp geometry_msgs std_msgs)
+ament_target_dependencies(automatic rclcpp sensor_msgs)
 target_link_libraries(plot_scan matplotlib_cpp::matplotlib_cpp)
+target_link_libraries(automatic matplotlib_cpp::matplotlib_cpp)
 
 install(TARGETS
   pub_cmd 
