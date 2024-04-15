@@ -55,7 +55,7 @@ void LidarData::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
         
     }
 
-    //plt::figure();
+    plt::figure();
     plt::plot(x_vect, y_vect);
     plt::show();
      

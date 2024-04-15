@@ -74,8 +74,26 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
 
 int main(int argc, char **argv)
 {
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Automatic>());
-  rclcpp::shutdown();
-  return 0;
+    rclcpp::init(argc, argv);
+
+    rclcpp::Node::SharedPtr node = std::make_shared<Automatic>();
+
+    rclcpp::WallRate loop_rate(10);
+
+    auto process_node = std::dynamic_pointer_cast<Automatic>(node);
+
+    while(rclcpp::ok())
+    {
+        rclcpp::spin_some(process_node->get_node_base_interface());
+        if(process_node->state_ == 2)
+        {
+            RCLCPP_INFO(process_node->get_logger(), "Automatic state");
+        }
+
+        loop_rate.sleep();
+    }
+
+
+    rclcpp::shutdown();
+    return 0;
 }

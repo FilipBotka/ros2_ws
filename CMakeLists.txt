@@ -40,7 +40,7 @@ add_executable(automatic src/automatic.cpp)
 ament_target_dependencies(pub_cmd rclcpp geometry_msgs)
 ament_target_dependencies(sub_odom rclcpp nav_msgs)
 ament_target_dependencies(plot_scan rclcpp sensor_msgs)
-ament_target_dependencies(master rclcpp std_msgs)
+ament_target_dependencies(master rclcpp std_msgs nav_msgs geometry_msgs)
 ament_target_dependencies(prcs rclcpp geometry_msgs std_msgs)
 ament_target_dependencies(automatic rclcpp sensor_msgs)
 target_link_libraries(plot_scan matplotlib_cpp::matplotlib_cpp)
@@ -52,6 +52,7 @@ install(TARGETS
   plot_scan
   master
   prcs
+  automatic
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

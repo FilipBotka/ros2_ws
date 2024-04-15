@@ -5,7 +5,18 @@ Cmd::Cmd()
 {
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_prcs", 10);
     RCLCPP_INFO(this->get_logger(), "Keyboard publisher has been started.");
+
+    sub_master_ = this->create_subscription<std_msgs::msg::Int16>(
+    "/cmd_master", 10, std::bind(&Cmd::masterCallback, this, std::placeholders::_1));
 }
+
+void Cmd::masterCallback(const std_msgs::msg::Int16::SharedPtr msg)
+{
+    RCLCPP_INFO(this->get_logger(), "callback active");
+    state_ = msg->data;
+    RCLCPP_INFO(this->get_logger(), "state: %d", state_);
+}
+
 
 void Cmd::publishCommand(char key)
 {
@@ -23,7 +34,7 @@ void Cmd::publishCommand(char key)
         case 'D': // Sipka vlavo
             message_.angular.z += 0.1;
             break; 
-        case '\n': // Enter key or 'X' to stop
+        case '\n':
             message_.linear.x = 0;
             message_.angular.z = 0;
             break;
@@ -60,18 +71,29 @@ char Cmd::getch()
 
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<Cmd>();
+    rclcpp::Node::SharedPtr node = std::make_shared<Cmd>();
+
+    rclcpp::WallRate loop_rate(10);
+
+    auto process_node = std::dynamic_pointer_cast<Cmd>(node);
+
 
     std::cout << "Control the robot with arrow keys." << std::endl;
 
     while (rclcpp::ok()) {
-        char c = node->getch();  // Call your non-blocking input function
-        if (c == '\033') { // if the first value is esc
-            node->getch();      // skip the [
-            c = node->getch();  // get the actual value
-            //node->publishCommand(c);
+        rclcpp::spin_some(process_node->get_node_base_interface());
+        if(process_node->state_==1)
+        {
+           char c = process_node->getch();  // Call your non-blocking input function
+            if (c == '\033') { // if the first value is esc
+                process_node->getch();      // skip the [
+                c = process_node->getch();  // get the actual value
+                //node->publishCommand(c);
+            }
+            process_node->publishCommand(c); 
         }
-        node->publishCommand(c);
+
+        
     }
 
     rclcpp::shutdown();
