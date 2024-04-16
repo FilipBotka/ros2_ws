@@ -25,14 +25,23 @@ class Automatic : public rclcpp::Node
 
         void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
         void masterCallback(const std_msgs::msg::Int16::SharedPtr msg);
+        void cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr getPublisher() const;
 
         int state_;
-
+        double vel_linear_;
+        double vel_angular_;
 
     private:
         
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr sub_master_;
+        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_vel_;
+
+        
+
 
 
 };

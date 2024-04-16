@@ -10,7 +10,23 @@ Automatic::Automatic()
     sub_master_ = this->create_subscription<std_msgs::msg::Int16>(
     "/cmd_master", 10, std::bind(&Automatic::masterCallback, this, std::placeholders::_1));
 
+    sub_vel_ = this->create_subscription<geometry_msgs::msg::Twist>(
+    "/cmd_vel", 10, std::bind(&Automatic::cmdCallback, this, std::placeholders::_1));
+
+    publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+    RCLCPP_INFO(this->get_logger(), "Input publisher started");
+
+
 }
+
+void Automatic::cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
+{
+    vel_linear_ = msg->linear.x;
+    vel_angular_ = msg->angular.z;
+    //RCLCPP_INFO(this->get_logger(), "Invalid key.");
+
+}
+
 void Automatic::masterCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
     RCLCPP_INFO(this->get_logger(), "callback active");
@@ -72,21 +88,31 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
 
 }
 
+rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr Automatic::getPublisher() const 
+{
+    return publisher_;
+}
+
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
 
     rclcpp::Node::SharedPtr node = std::make_shared<Automatic>();
+    auto process_node = std::dynamic_pointer_cast<Automatic>(node);
 
     rclcpp::WallRate loop_rate(10);
 
-    auto process_node = std::dynamic_pointer_cast<Automatic>(node);
+    geometry_msgs::msg::Twist msg;
+    auto publisher = process_node->getPublisher();
 
     while(rclcpp::ok())
     {
         rclcpp::spin_some(process_node->get_node_base_interface());
         if(process_node->state_ == 2)
         {
+            msg.angular.z = process_node->vel_angular_;
+            msg.linear.x = process_node->vel_linear_;
+            publisher->publish(msg);
             RCLCPP_INFO(process_node->get_logger(), "Automatic state");
         }
 
