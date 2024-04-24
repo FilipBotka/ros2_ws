@@ -7,6 +7,7 @@
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
+#include <mutex>
 
 #include "matplotlibcpp.h"
 #include "rclcpp/rclcpp.hpp"
@@ -26,21 +27,39 @@ class Automatic : public rclcpp::Node
         void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
         void masterCallback(const std_msgs::msg::Int16::SharedPtr msg);
         void cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+        void cmdPrcsCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+        void timerCallback();
+        void timerPlotCallback();
 
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr getPublisher() const;
 
-        int state_;
         double vel_linear_;
         double vel_angular_;
-
+        
+        int state_;
+        double distance_;
     private:
         
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
+
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr sub_master_;
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_vel_;
+        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_prcs_;
 
-        
+        rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::TimerBase::SharedPtr timer_plot_;
+
+        void autonomousCmd();
+
+        double dist_front_;
+        double dist_right_;
+        double dist_left_;
+
+        std::vector<double> x_vect_, y_vect_;
+
+        geometry_msgs::msg::Twist msg_;
 
 
 

@@ -23,6 +23,7 @@ class Process : public rclcpp::Node
         void masterCallback(const std_msgs::msg::Int16::SharedPtr msg);
         
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr getPublisher() const;
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr getPubAuto() const;
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr getSubscriber() const;
 
         geometry_msgs::msg::Twist message_;
@@ -30,6 +31,7 @@ class Process : public rclcpp::Node
 
     private:
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_auto_;
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_;
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr sub_master_;
 

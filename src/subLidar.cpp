@@ -30,7 +30,7 @@ void LidarData::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
     for (int i = 0; i < range_size; i++)
     {
         
-        if(angle>=angle_max)
+        if(angle<=angle_max)
         {
             range = msg->ranges[i];
             if(range<msg->range_max && range>msg->range_min)
@@ -55,7 +55,10 @@ void LidarData::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
         
     }
 
-    plt::figure();
+    RCLCPP_INFO(this->get_logger(), "x_vect size: %d", x_vect.size());
+    RCLCPP_INFO(this->get_logger(), "x_vect size: %d", y_vect.size());
+
+    //plt::figure();
     plt::plot(x_vect, y_vect);
     plt::show();
      
