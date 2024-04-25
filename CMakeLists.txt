@@ -42,7 +42,7 @@ ament_target_dependencies(sub_odom rclcpp nav_msgs)
 ament_target_dependencies(plot_scan rclcpp sensor_msgs)
 ament_target_dependencies(master rclcpp std_msgs nav_msgs geometry_msgs)
 ament_target_dependencies(prcs rclcpp geometry_msgs std_msgs)
-ament_target_dependencies(automatic rclcpp sensor_msgs)
+ament_target_dependencies(automatic rclcpp sensor_msgs nav_msgs)
 target_link_libraries(plot_scan matplotlib_cpp::matplotlib_cpp)
 target_link_libraries(automatic matplotlib_cpp::matplotlib_cpp)
 
