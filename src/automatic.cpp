@@ -1,7 +1,7 @@
 #include "../include/automatic.h"
 
 Automatic::Automatic()
-    : Node("Automatic"), distance_(0.5), state_auto_(0), ddebugg_laser_(0)
+    : Node("Automatic"), distance_(0.5), state_auto_(0), debugg_laser_(0)
 {
     plt::figure();
     subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -36,6 +36,7 @@ Automatic::Automatic()
 
 
 }
+// Plotovanie
 void Automatic::timerPlotCallback()
 {
     /* std::lock_guard<std::mutex> lock(mutex_); 
@@ -50,6 +51,7 @@ void Automatic::timerPlotCallback()
     plt::pause(0.01); */
 }
 
+// Pokym nenarazime na treshold tak publikujeme to co sme mali z Manualu
 void Automatic::timerCallback()
 {
     if (state_ == 2 && state_auto_ != 1) 
@@ -67,25 +69,27 @@ void Automatic::timerCallback()
 
 }
 
-
+// Ked narazime na treshold tak sa spusti otacanie
 void Automatic::timerAuto()
 {
     if (state_auto_ == 1 && state_ != 1)
     {
-        msg_.linear.x = 0;
-        msg_.angular.z = 0.3;
-        publisher_->publish(msg_);
-        RCLCPP_INFO(this->get_logger(), "auto Timer ide");
-        // while yaw tu treba dat
-        /* while (yaw_<1.54)
+
+        if (yaw_<1.54)
         {
+            msg_.linear.x = 0;
+            msg_.angular.z = 0.3;
             publisher_->publish(msg_);
         }
-        msg_.linear.x = 0;
-        msg_.angular.z = 0;
-        publisher_->publish(msg_); */
-
-
+        else
+        {
+            msg_.linear.x = 0;
+            msg_.angular.z = 0;
+            publisher_->publish(msg_);
+            vel_angular_ = 0;
+            vel_linear_ = 0.1;
+            state_auto_ = 0;  
+        }     
     }
 
     if (past_state_ != state_)
@@ -98,6 +102,7 @@ void Automatic::timerAuto()
 
 }
 
+// Odometria s prepoctom z kvaternionu na eulerov uhol
 void Automatic::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
     x_odom_ = msg->pose.pose.position.x;
@@ -110,10 +115,9 @@ void Automatic::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     yaw_ = atan2( 2*(w*z + x*y), 1-2*(pow(z,2) + pow(y,2)));
     //RCLCPP_INFO(this->get_logger(), "\n yaw: %f", yaw_);
 
-    //RCLCPP_INFO(this->get_logger(), "\npossition x: '%f\n' possition y: '%f\n'", x,y);
-
 }
 
+// Zatial nic
 void Automatic::cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
     //vel_linear_ = msg->linear.x;
@@ -122,6 +126,7 @@ void Automatic::cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 
 }
 
+// Subscribujem rychlosti dokym som v manualy
 void Automatic::cmdPrcsCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {   
 
@@ -135,6 +140,7 @@ void Automatic::cmdPrcsCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 
 }
 
+// State od Mastra
 void Automatic::masterCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
     RCLCPP_INFO(this->get_logger(), "callback active");
@@ -154,6 +160,8 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
 
     x_vect_.clear();
     y_vect_.clear();
+    //ranges_.clear();
+    //point_.clear();
 
     double angle_min = msg->angle_min;
     double angle_max = msg->angle_max;
@@ -164,8 +172,10 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
     dist_front_ = msg->ranges[0];
     //RCLCPP_INFO(this->get_logger(), "dist_front: %f", dist_front_);
 
+
     std::vector<std::vector<double>> ranges_;
     std::vector<double> point_;
+
 
     double x,y;
     //std::vector<double> x_vect, y_vect;
@@ -177,7 +187,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
     for (int i = 0; i < range_size; i++)
     {
         
-        if(angle<=1.5707 || angle>=4.712) // chcem brat iba 180 pred sebou
+        if(/* angle<=1.5707 || angle>=4.712 */ angle <= angle_max) // chcem brat iba 180 pred sebou
         {
             range = msg->ranges[i];
             if(range < 5.1 && range > 0.15)
@@ -187,7 +197,6 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
                 y = range * sin(angle);
                 //point = {x,y};
                 //points.push_back(point);
-                //plt::plot(x,y);
 
                 x_vect_.push_back(x);
                 y_vect_.push_back(y);
@@ -195,7 +204,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
                 point_.push_back(angle);
                 ranges_.push_back(point_);
 
-                if (ddebugg_laser_ < 1)
+                if (debugg_laser_ < 1)
                 {
                     //outputFile2 << x << "," << range << "," << angle << "\n";
                 }
@@ -213,14 +222,14 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
         
     }
 
-    RCLCPP_INFO(this->get_logger(), "range size: %d", ranges_.size());
+    //RCLCPP_INFO(this->get_logger(), "range size: %d", ranges_.size());
 
     // Toto by malo cisto brat iba vzdialenost na danom uhle
     if (state_auto_ == 0)
     {
         for(std::vector<double> rg : ranges_)
         {
-            RCLCPP_INFO(this->get_logger(), "range: %f", rg[0]);
+            //RCLCPP_INFO(this->get_logger(), "range: %f", rg[0]);
             if(rg[0] < 0.5)
             {
                 vel_angular_ = 0;
@@ -278,6 +287,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
 
 }
 
+// Vo vyvoji
 void Automatic::autonomousCmd(double angle, double angle_inc)
 {
     double min_dist = 10;
@@ -322,20 +332,18 @@ rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr Automatic::getPublisher(
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-
-    //std::shared_ptr<Automatic> node = std::make_shared<Automatic>();
-    //rclcpp::Node::SharedPtr node = std::make_shared<Automatic>();
-    //auto process_node = std::dynamic_pointer_cast<Automatic>(node);
     auto node = std::make_shared<Automatic>();
-    // Timer, ktory bude spinovany 
-
-    /* rclcpp::WallRate loop_rate(10);
-    geometry_msgs::msg::Twist msg;
-    auto publisher = process_node->getPublisher(); */
-
     rclcpp::spin(node);
 
-    /* while(rclcpp::ok())
+    /* 
+    std::shared_ptr<Automatic> node = std::make_shared<Automatic>();
+    rclcpp::Node::SharedPtr node = std::make_shared<Automatic>();
+    auto process_node = std::dynamic_pointer_cast<Automatic>(node);
+
+    rclcpp::WallRate loop_rate(10);
+    geometry_msgs::msg::Twist msg;
+    auto publisher = process_node->getPublisher();
+    while(rclcpp::ok())
     {
         RCLCPP_INFO(process_node->get_logger(), "While loop");
         //rclcpp::spin_some(process_node);
@@ -350,8 +358,7 @@ int main(int argc, char **argv)
         }
 
         loop_rate.sleep();
-    } */
-
+    }*/
 
     rclcpp::shutdown();
     return 0;

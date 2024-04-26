@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <mutex>
 #include <fstream>
+#include <thread>
 
 #include "matplotlibcpp.h"
 #include "rclcpp/rclcpp.hpp"
@@ -30,6 +31,7 @@ class Automatic : public rclcpp::Node
         void masterCallback(const std_msgs::msg::Int16::SharedPtr msg);
         void cmdCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
         void cmdPrcsCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
         void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
         void timerCallback();
@@ -66,19 +68,17 @@ class Automatic : public rclcpp::Node
         double x_odom_, y_odom_;
         double yaw_;
 
-        //std::vector<double> point_;
-        //std::vector<std::vector<double>> ranges_;
+        /* std::vector<double> point_;
+        std::vector<std::vector<double>> ranges_; */
 
         double state_auto_;
-        int ddebugg_laser_;
+        int debugg_laser_;
         int past_state_;
 
         std::vector<double> x_vect_, y_vect_;
         std::mutex mutex_;
 
         geometry_msgs::msg::Twist msg_;
-
-
 
 };
 
