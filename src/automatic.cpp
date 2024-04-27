@@ -1,7 +1,7 @@
 #include "../include/automatic.h"
 
 Automatic::Automatic()
-    : Node("Automatic"), distance_(0.5), state_auto_(0), debugg_laser_(0)
+    : Node("Automatic"), distance_(0.5), state_auto_(0), debugg_laser_(0), past_state_auto_(0)
 {
     plt::figure();
     subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -72,10 +72,36 @@ void Automatic::timerCallback()
 // Ked narazime na treshold tak sa spusti otacanie
 void Automatic::timerAuto()
 {
+
+    if(state_auto_ == 1 && state_auto_ != past_state_auto_)
+    {
+        if (yaw_<1.57 && yaw_ >= 0)
+        {
+            yaw_const_ = 1.57;
+        }
+        else if(yaw_ >= 1.57 && yaw_ < 3.14)
+        {
+            yaw_const_ = 3.14;
+        }
+        else if (yaw_ >= -3.14 && yaw_ < -1.57)
+        {
+            yaw_const_ = -1.57;
+        }
+        else if (yaw_ >= -1.57 && yaw_ < 0)
+        {
+            yaw_const_ = 0;
+        }
+
+        RCLCPP_INFO(this->get_logger(), "yaw: %f", yaw_);
+        RCLCPP_INFO(this->get_logger(), "yaw constant %f", yaw_const_);
+    }
+
+
+
     if (state_auto_ == 1 && state_ != 1)
     {
 
-        if (yaw_<1.54)
+        /* if (yaw_<1.54)
         {
             msg_.linear.x = 0;
             msg_.angular.z = 0.3;
@@ -89,8 +115,92 @@ void Automatic::timerAuto()
             vel_angular_ = 0;
             vel_linear_ = 0.1;
             state_auto_ = 0;  
-        }     
+        }  */
+
+        RCLCPP_INFO(this->get_logger(), "ideeem");
+
+
+        if (yaw_const_ == 1.57)
+        {
+            if (yaw_<=1.57)
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0.3;
+                publisher_->publish(msg_);
+            }
+            else
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0;
+                publisher_->publish(msg_);
+                vel_angular_ = 0;
+                vel_linear_ = 0.1;
+                state_auto_ = 0;  
+            }
+
+            
+        }
+        else if(yaw_const_ == 3.14)
+        {
+            if (yaw_<=3.14 && yaw_>=1.57)
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0.3;
+                publisher_->publish(msg_);
+            }
+            else
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0;
+                publisher_->publish(msg_);
+                vel_angular_ = 0;
+                vel_linear_ = 0.1;
+                state_auto_ = 0;  
+            }
+
+
+        }
+        else if(yaw_const_ == -1.57)
+        {
+            if (yaw_<= -1.57)
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0.3;
+                publisher_->publish(msg_);
+            }
+            else
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0;
+                publisher_->publish(msg_);
+                vel_angular_ = 0;
+                vel_linear_ = 0.1;
+                state_auto_ = 0;  
+            }
+            
+        }
+        else if(yaw_const_ == 0)
+        {
+            if (yaw_<= 0)
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0.3;
+                publisher_->publish(msg_);
+            }
+            else
+            {
+                msg_.linear.x = 0;
+                msg_.angular.z = 0;
+                publisher_->publish(msg_);
+                vel_angular_ = 0;
+                vel_linear_ = 0.1;
+                state_auto_ = 0;  
+            }
+            
+        } 
     }
+
+
 
     if (past_state_ != state_)
     {
@@ -99,21 +209,37 @@ void Automatic::timerAuto()
     
     
     past_state_ = state_;
+    past_state_auto_ = state_auto_;
 
 }
 
 // Odometria s prepoctom z kvaternionu na eulerov uhol
 void Automatic::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
+    // Position
     x_odom_ = msg->pose.pose.position.x;
     y_odom_ = msg->pose.pose.position.y;
+
+    // Orientation
     double x = msg->pose.pose.orientation.x;
     double y = msg->pose.pose.orientation.y;
     double z = msg->pose.pose.orientation.z;
     double w = msg->pose.pose.orientation.w;
+    
+    // Linear velocity
+    float linear_vx = msg->twist.twist.linear.x;
+    float linear_vy = msg->twist.twist.linear.y;
+    float linear_vz = msg->twist.twist.linear.z;
+
+    float linear_vel = std::sqrt(pow(linear_vx, 2) + pow(linear_vy, 2) + pow(linear_vz, 2));
+
+    // Angular vel
+    float angular_vel = msg->twist.twist.angular.z;
+
 
     yaw_ = atan2( 2*(w*z + x*y), 1-2*(pow(z,2) + pow(y,2)));
-    //RCLCPP_INFO(this->get_logger(), "\n yaw: %f", yaw_);
+    //RCLCPP_INFO(this->get_logger(), "yaw: %f", yaw_);
+    
 
 }
 
@@ -239,7 +365,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
                 state_auto_ = 1;
                 double min_range_angle = rg[1];
                 publisher_->publish(msg_);
-                RCLCPP_INFO(this->get_logger(), "laser scan distance %f", rg[0]);
+                //RCLCPP_INFO(this->get_logger(), "laser scan distance %f", rg[0]);
 
                 
             }

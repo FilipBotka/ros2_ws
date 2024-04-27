@@ -10,6 +10,9 @@
 #include <mutex>
 #include <fstream>
 #include <thread>
+#include <cmath>
+#include <complex>
+#include <vector>
 
 #include "matplotlibcpp.h"
 #include "rclcpp/rclcpp.hpp"
@@ -67,13 +70,20 @@ class Automatic : public rclcpp::Node
 
         double x_odom_, y_odom_;
         double yaw_;
+        double yaw_const_ = 0;
 
         /* std::vector<double> point_;
         std::vector<std::vector<double>> ranges_; */
 
-        double state_auto_;
-        int debugg_laser_;
+        int state_auto_;
+        int state_auto_reg_;
+
         int past_state_;
+        int past_state_auto_;
+        
+        int debugg_laser_;
+
+        
 
         std::vector<double> x_vect_, y_vect_;
         std::mutex mutex_;
