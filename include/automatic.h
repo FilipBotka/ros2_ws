@@ -40,6 +40,7 @@ class Automatic : public rclcpp::Node
         void timerCallback();
         void timerPlotCallback();
         void timerAuto();
+        void timerAutoCmd();
 
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr getPublisher() const;
 
@@ -61,10 +62,12 @@ class Automatic : public rclcpp::Node
         rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::TimerBase::SharedPtr timer_plot_;
         rclcpp::TimerBase::SharedPtr timer_auto_;
+        rclcpp::TimerBase::SharedPtr timer_auto_reg_;
 
-        void autonomousCmd(double angle, double angle_inc);
+        
 
         double dist_front_;
+        double dist_front_right_;
         double dist_right_;
         double dist_left_;
 

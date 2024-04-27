@@ -1,7 +1,7 @@
 #include "../include/automatic.h"
 
 Automatic::Automatic()
-    : Node("Automatic"), distance_(0.5), state_auto_(0), debugg_laser_(0), past_state_auto_(0)
+    : Node("Automatic"), distance_(0.5), state_auto_(0), debugg_laser_(0), past_state_auto_(0), state_auto_reg_(0)
 {
     plt::figure();
     subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -33,6 +33,10 @@ Automatic::Automatic()
     timer_auto_ = this->create_wall_timer(
             std::chrono::milliseconds(100), 
             std::bind(&Automatic::timerAuto, this));
+
+    timer_auto_reg_ = this->create_wall_timer(
+            std::chrono::milliseconds(50), 
+            std::bind(&Automatic::timerAutoCmd, this));
 
 
 }
@@ -73,6 +77,7 @@ void Automatic::timerCallback()
 void Automatic::timerAuto()
 {
 
+    // Nastavenie kolko sa ma natocit ked pride k stene
     if(state_auto_ == 1 && state_auto_ != past_state_auto_)
     {
         if (yaw_<1.57 && yaw_ >= 0)
@@ -100,26 +105,6 @@ void Automatic::timerAuto()
 
     if (state_auto_ == 1 && state_ != 1)
     {
-
-        /* if (yaw_<1.54)
-        {
-            msg_.linear.x = 0;
-            msg_.angular.z = 0.3;
-            publisher_->publish(msg_);
-        }
-        else
-        {
-            msg_.linear.x = 0;
-            msg_.angular.z = 0;
-            publisher_->publish(msg_);
-            vel_angular_ = 0;
-            vel_linear_ = 0.1;
-            state_auto_ = 0;  
-        }  */
-
-        RCLCPP_INFO(this->get_logger(), "ideeem");
-
-
         if (yaw_const_ == 1.57)
         {
             if (yaw_<=1.57)
@@ -136,9 +121,8 @@ void Automatic::timerAuto()
                 vel_angular_ = 0;
                 vel_linear_ = 0.1;
                 state_auto_ = 0;  
-            }
-
-            
+                state_auto_reg_ = 1;
+            }            
         }
         else if(yaw_const_ == 3.14)
         {
@@ -156,9 +140,8 @@ void Automatic::timerAuto()
                 vel_angular_ = 0;
                 vel_linear_ = 0.1;
                 state_auto_ = 0;  
+                state_auto_reg_ = 1;
             }
-
-
         }
         else if(yaw_const_ == -1.57)
         {
@@ -176,8 +159,8 @@ void Automatic::timerAuto()
                 vel_angular_ = 0;
                 vel_linear_ = 0.1;
                 state_auto_ = 0;  
+                state_auto_reg_ = 1;
             }
-            
         }
         else if(yaw_const_ == 0)
         {
@@ -195,13 +178,13 @@ void Automatic::timerAuto()
                 vel_angular_ = 0;
                 vel_linear_ = 0.1;
                 state_auto_ = 0;  
+                state_auto_reg_ = 1;
             }
-            
         } 
     }
 
 
-
+    // Nejaka haluz aby to cele fungovalo
     if (past_state_ != state_)
     {
         state_auto_ = 0;
@@ -274,7 +257,7 @@ void Automatic::masterCallback(const std_msgs::msg::Int16::SharedPtr msg)
     RCLCPP_INFO(this->get_logger(), "state: %d", state_);
 }
 
-
+// Spracovavanie LiDAR dat a kopa inych sraciek
 void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
     
@@ -296,7 +279,10 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
     double range;
 
     dist_front_ = msg->ranges[0];
-    //RCLCPP_INFO(this->get_logger(), "dist_front: %f", dist_front_);
+    dist_front_right_ = msg->ranges[240];
+    dist_right_ = msg->ranges[207];
+    dist_left_ = msg->ranges[70];
+    //RCLCPP_INFO(this->get_logger(), "dist_front: %f", dist_right_);
 
 
     std::vector<std::vector<double>> ranges_;
@@ -351,7 +337,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
     //RCLCPP_INFO(this->get_logger(), "range size: %d", ranges_.size());
 
     // Toto by malo cisto brat iba vzdialenost na danom uhle
-    if (state_auto_ == 0)
+    if (state_auto_ == 0 && state_auto_reg_ == 0)
     {
         for(std::vector<double> rg : ranges_)
         {
@@ -363,6 +349,7 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
                 msg_.linear.x = 0;
                 msg_.angular.z = 0;
                 state_auto_ = 1;
+                state_auto_reg_ = 0;
                 double min_range_angle = rg[1];
                 publisher_->publish(msg_);
                 //RCLCPP_INFO(this->get_logger(), "laser scan distance %f", rg[0]);
@@ -413,10 +400,10 @@ void Automatic::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr m
 
 }
 
-// Vo vyvoji
-void Automatic::autonomousCmd(double angle, double angle_inc)
+// kopa sraciek zatial
+void Automatic::timerAutoCmd()
 {
-    double min_dist = 10;
+    /* double min_dist = 10;
     double min_dist_angle = 0;
     for(double x : x_vect_)
     {
@@ -431,22 +418,57 @@ void Automatic::autonomousCmd(double angle, double angle_inc)
     }
 
     double onPlane = 6.28-angle;
+    double fullRot = onPlane + 1.57079633; */
 
-    double fullRot = onPlane + 1.57079633;
+    float e_right = 0;
+    float e_front = 0;
+    float p_reg = 1.5;
+    float p_reg_front = 2.5;
 
-    /* while (dist_front_ <= 0.55)
+    RCLCPP_INFO(this->get_logger(), "dist_right: %f", dist_right_);
+    RCLCPP_INFO(this->get_logger(), "dist_left: %f", dist_left_);
+    geometry_msgs::msg::Twist msg;
+
+    float side_front = dist_front_right_/2;
+
+    if (state_auto_reg_ == 1)
     {
-        msg_.angular.z = 0.1;
-        msg_.linear.x = 0;
-        publisher_->publish(msg_);
+        RCLCPP_INFO(this->get_logger(), "autonomous cmd idee");
+        e_right = distance_ - dist_right_;
+        e_front = distance_ - dist_front_;
+
+        if(e_front>-0.25 /* && side_front<dist_right_ */)
+        {
+            vel_linear_ = 0.1;
+            vel_angular_ = /* p_reg * e_right + */ p_reg_front * (-e_front);
+        }
+        /* else if(e_front>-0.25 && side_front>dist_right_)
+        {
+            vel_linear_ = 0.1;
+            vel_angular_ = p_reg * e_right + p_reg_front * (e_front);
+        } */
+        else
+        {
+            vel_linear_ = 0.1;
+            vel_angular_ = p_reg * e_right;  
+        }
+
+        
+
+        RCLCPP_INFO(this->get_logger(), "distance_const: %f", distance_);
+        RCLCPP_INFO(this->get_logger(), "dist right: %f", dist_right_);
+        RCLCPP_INFO(this->get_logger(), "vel_angular: %f", vel_angular_);
+
+        if(vel_angular_>0.22)
+        {
+            vel_angular_ = 0.2;
+        }
+
+        msg.linear.x = vel_linear_;
+        msg.angular.z = vel_angular_;
+        publisher_ ->publish(msg);
     }
-
-    msg_.angular.z = 0;
-    msg_.linear.x = 0;
-    publisher_->publish(msg_); */
-
-
-
+    
     
 }
 
